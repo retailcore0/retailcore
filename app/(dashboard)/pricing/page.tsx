@@ -1,22 +1,48 @@
-import { checkoutAction } from '@/lib/payments/actions';
+'use client';
+
 import { Check } from 'lucide-react';
-import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
-import { SubmitButton } from './submit-button';
+import { Button } from '@/components/ui/button';
+import React from 'react';
 
-// Prices are fresh for one hour max
-export const revalidate = 3600;
+// Dados mockados
+const mockProducts = [
+  { id: 'prod_base', name: 'Base' },
+  { id: 'prod_plus', name: 'Plus' },
+];
 
-export default async function PricingPage() {
-  const [prices, products] = await Promise.all([
-    getStripePrices(),
-    getStripeProducts(),
-  ]);
+const mockPrices = [
+  { 
+    id: 'price_base_monthly', 
+    productId: 'prod_base', 
+    unitAmount: 800, 
+    interval: 'month', 
+    trialPeriodDays: 7 
+  },
+  { 
+    id: 'price_plus_monthly', 
+    productId: 'prod_plus', 
+    unitAmount: 1200, 
+    interval: 'month', 
+    trialPeriodDays: 7 
+  },
+];
+
+export default function PricingPage() {
+  // Usando dados mockados em vez de buscar do Stripe
+  const prices = mockPrices;
+  const products = mockProducts;
 
   const basePlan = products.find((product) => product.name === 'Base');
   const plusPlan = products.find((product) => product.name === 'Plus');
 
   const basePrice = prices.find((price) => price.productId === basePlan?.id);
   const plusPrice = prices.find((price) => price.productId === plusPlan?.id);
+
+  // Função simplificada para simular o checkout
+  const handleCheckout = (e: React.FormEvent): void => {
+    e.preventDefault();
+    alert('Checkout functionality would be here in a real app');
+  };
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -32,6 +58,7 @@ export default async function PricingPage() {
             'Email Support',
           ]}
           priceId={basePrice?.id}
+          onCheckout={handleCheckout}
         />
         <PricingCard
           name={plusPlan?.name || 'Plus'}
@@ -44,10 +71,21 @@ export default async function PricingPage() {
             '24/7 Support + Slack Access',
           ]}
           priceId={plusPrice?.id}
+          onCheckout={handleCheckout}
         />
       </div>
     </main>
   );
+}
+
+interface PricingCardProps {
+  name: string;
+  price: number;
+  interval: string;
+  trialDays: number;
+  features: string[];
+  priceId?: string;
+  onCheckout: (e: React.FormEvent) => void;
 }
 
 function PricingCard({
@@ -57,14 +95,8 @@ function PricingCard({
   trialDays,
   features,
   priceId,
-}: {
-  name: string;
-  price: number;
-  interval: string;
-  trialDays: number;
-  features: string[];
-  priceId?: string;
-}) {
+  onCheckout,
+}: PricingCardProps) {
   return (
     <div className="pt-6">
       <h2 className="text-2xl font-medium text-gray-900 mb-2">{name}</h2>
@@ -85,9 +117,11 @@ function PricingCard({
           </li>
         ))}
       </ul>
-      <form action={checkoutAction}>
+      <form onSubmit={onCheckout}>
         <input type="hidden" name="priceId" value={priceId} />
-        <SubmitButton />
+        <Button type="submit" className="w-full">
+          Start Free Trial
+        </Button>
       </form>
     </div>
   );

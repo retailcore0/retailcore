@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Settings,
@@ -11,10 +13,46 @@ import {
   CheckCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { ActivityType } from '@/lib/db/schema';
-import { getActivityLogs } from '@/lib/db/queries';
 
-const iconMap: Record<ActivityType, LucideIcon> = {
+// Enumeração simplificada para atividades
+const ActivityType = {
+  SIGN_UP: 'SIGN_UP',
+  SIGN_IN: 'SIGN_IN',
+  SIGN_OUT: 'SIGN_OUT',
+  UPDATE_PASSWORD: 'UPDATE_PASSWORD',
+  DELETE_ACCOUNT: 'DELETE_ACCOUNT',
+  UPDATE_ACCOUNT: 'UPDATE_ACCOUNT',
+  CREATE_TEAM: 'CREATE_TEAM',
+  REMOVE_TEAM_MEMBER: 'REMOVE_TEAM_MEMBER',
+  INVITE_TEAM_MEMBER: 'INVITE_TEAM_MEMBER',
+  ACCEPT_INVITATION: 'ACCEPT_INVITATION',
+};
+
+type ActivityTypeKey = keyof typeof ActivityType;
+
+// Dados mockados
+const mockLogs = [
+  {
+    id: '1',
+    action: ActivityType.SIGN_IN,
+    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutos atrás
+    ipAddress: '192.168.1.1',
+  },
+  {
+    id: '2',
+    action: ActivityType.UPDATE_ACCOUNT,
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 horas atrás
+    ipAddress: '192.168.1.1',
+  },
+  {
+    id: '3',
+    action: ActivityType.INVITE_TEAM_MEMBER,
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 dia atrás
+    ipAddress: '192.168.1.1',
+  },
+];
+
+const iconMap: Record<string, LucideIcon> = {
   [ActivityType.SIGN_UP]: UserPlus,
   [ActivityType.SIGN_IN]: UserCog,
   [ActivityType.SIGN_OUT]: LogOut,
@@ -27,7 +65,7 @@ const iconMap: Record<ActivityType, LucideIcon> = {
   [ActivityType.ACCEPT_INVITATION]: CheckCircle,
 };
 
-function getRelativeTime(date: Date) {
+function getRelativeTime(date: Date): string {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
@@ -41,7 +79,7 @@ function getRelativeTime(date: Date) {
   return date.toLocaleDateString();
 }
 
-function formatAction(action: ActivityType): string {
+function formatAction(action: string): string {
   switch (action) {
     case ActivityType.SIGN_UP:
       return 'You signed up';
@@ -68,8 +106,9 @@ function formatAction(action: ActivityType): string {
   }
 }
 
-export default async function ActivityPage() {
-  const logs = await getActivityLogs();
+export default function ActivityPage() {
+  // Usando dados mockados em vez de buscar do banco de dados
+  const logs = mockLogs;
 
   return (
     <section className="flex-1 p-4 lg:p-8">
@@ -84,10 +123,8 @@ export default async function ActivityPage() {
           {logs.length > 0 ? (
             <ul className="space-y-4">
               {logs.map((log) => {
-                const Icon = iconMap[log.action as ActivityType] || Settings;
-                const formattedAction = formatAction(
-                  log.action as ActivityType
-                );
+                const Icon = iconMap[log.action] || Settings;
+                const formattedAction = formatAction(log.action);
 
                 return (
                   <li key={log.id} className="flex items-center space-x-4">
