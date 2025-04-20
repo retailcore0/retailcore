@@ -2,32 +2,33 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/client-auth-provider";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    // Verificar autenticação no client-side
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (!isAuthenticated) {
+    if (!isLoading && !user) {
       router.push('/sign-in');
-    } else {
-      setIsLoading(false);
     }
-  }, [router]);
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Carregando...</div>;
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
     <div className="container mx-auto p-6 space-y-8">
       <div className="flex flex-col space-y-4">
         <h1 className="text-4xl font-bold">Dashboard</h1>
-        <p className="text-gray-500">Bem-vindo à sua área administrativa na Retail Core.</p>
+        <p className="text-gray-500">Bem-vindo à sua área administrativa na Retail Core{user.storeName ? `, ${user.storeName}` : ''}.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">

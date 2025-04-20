@@ -13,38 +13,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import React from 'react';
+import { useAuth } from '@/components/auth/client-auth-provider';
 
 function UserMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<{ email: string; name: string | null } | null>(null);
+  const { user, logout, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar autenticação no client-side
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (isAuthenticated) {
-      setUser({
-        email: 'usuario@exemplo.com',
-        name: 'Usuário Demo'
-      });
-    } else {
+    if (!isLoading && !user) {
       router.push('/sign-in');
     }
-  }, [router]);
+  }, [user, isLoading, router]);
 
-  // Função simulada para logout
-  const handleSignOut = async () => {
-    // Simular uma pequena espera para parecer autêntico
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Limpar estado de autenticação
-    localStorage.removeItem('isAuthenticated');
-    
-    // Redirecionar para a página de login
-    router.push('/sign-in');
-  };
-
-  if (!user) {
+  if (isLoading || !user) {
     return null;
   }
 
@@ -55,9 +37,8 @@ function UserMenu() {
           <AvatarImage alt={user.name || ''} />
           <AvatarFallback>
             {user.email
-              .split(' ')
-              .map((n) => n[0])
-              .join('')}
+              .split('@')[0][0]
+              .toUpperCase()}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -68,7 +49,7 @@ function UserMenu() {
             <span>Dashboard</span>
           </Link>
         </DropdownMenuItem>
-        <button onClick={handleSignOut} className="flex w-full">
+        <button onClick={logout} className="flex w-full">
           <DropdownMenuItem className="w-full flex-1 cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Sair</span>

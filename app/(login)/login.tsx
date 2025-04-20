@@ -2,25 +2,67 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useActionState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { signIn, signUp } from './actions';
-import { ActionState } from '@/lib/auth/middleware';
 import { useEffect, useRef, Suspense } from 'react';
+import { useAuth } from '@/components/auth/client-auth-provider';
+
+// Definição do tipo simplificado
+type ActionState = {
+  error?: string;
+  email?: string;
+  password?: string;
+  success?: boolean;
+};
 
 // Component to handle search params retrieval
 function LoginForm({ mode }: { mode: 'signin' | 'signup' }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const redirect = searchParams.get('redirect');
   const priceId = searchParams.get('priceId');
   const inviteId = searchParams.get('inviteId');
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    mode === 'signin' ? signIn : signUp,
-    { error: '' }
-  );
+  
+  const { login, signup, isLoading } = useAuth();
+  const [pending, setPending] = useState(false);
+  const [state, setState] = useState<ActionState>({ error: '' });
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    storeName: '',
+  });
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPending(true);
+    
+    try {
+      if (mode === 'signin') {
+        await login(formData.email, formData.password);
+      } else {
+        await signup(formData.email, formData.password, formData.storeName);
+      }
+      // Não é necessário redirecionar aqui, o ClientAuthProvider já faz isso
+    } catch (error) {
+      setState({ 
+        error: 'Email ou senha inválidos. Por favor, tente novamente.',
+        email: formData.email,
+        password: formData.password
+      });
+      setPending(false);
+    }
+  };
   
   return (
     <div className="max-w-md w-full mx-auto bg-white p-8 rounded-lg shadow-sm border border-gray-100">
@@ -47,6 +89,7 @@ function LoginForm({ mode }: { mode: 'signin' | 'signup' }) {
       <Button
         type="button"
         className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 mb-6"
+        onClick={() => alert('Funcionalidade de login com Google em desenvolvimento.')}
       >
         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M21.8055 10.0415H21V10H12V14H17.6515C16.827 16.3285 14.6115 18 12 18C8.6865 18 6 15.3135 6 12C6 8.6865 8.6865 6 12 6C13.5295 6 14.921 6.577 15.9805 7.5195L18.809 4.691C17.023 3.0265 14.634 2 12 2C6.4775 2 2 6.4775 2 12C2 17.5225 6.4775 22 12 22C17.5225 22 22 17.5225 22 12C22 11.3295 21.931 10.675 21.8055 10.0415Z" fill="#FFC107" />
@@ -68,7 +111,7 @@ function LoginForm({ mode }: { mode: 'signin' | 'signup' }) {
         </div>
       </div>
 
-      <form className="space-y-6" action={formAction}>
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <input type="hidden" name="redirect" value={redirect || ''} />
         <input type="hidden" name="priceId" value={priceId || ''} />
         <input type="hidden" name="inviteId" value={inviteId || ''} />
@@ -87,6 +130,8 @@ function LoginForm({ mode }: { mode: 'signin' | 'signup' }) {
                 name="storeName"
                 type="text"
                 required
+                value={formData.storeName}
+                onChange={handleChange}
                 className="appearance-none rounded-full relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-lime-500 focus:border-lime-500 focus:z-10 sm:text-sm h-10"
                 placeholder="Digite o nome da sua loja"
                 style={{ display: 'block' }}
@@ -108,7 +153,8 @@ function LoginForm({ mode }: { mode: 'signin' | 'signup' }) {
               name="email"
               type="email"
               autoComplete="email"
-              defaultValue={state.email}
+              value={formData.email}
+              onChange={handleChange}
               required
               maxLength={50}
               className="appearance-none rounded-full relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-lime-500 focus:border-lime-500 focus:z-10 sm:text-sm h-10"
@@ -133,7 +179,8 @@ function LoginForm({ mode }: { mode: 'signin' | 'signup' }) {
               autoComplete={
                 mode === 'signin' ? 'current-password' : 'new-password'
               }
-              defaultValue={state.password}
+              value={formData.password}
+              onChange={handleChange}
               required
               minLength={8}
               maxLength={100}
@@ -160,9 +207,9 @@ function LoginForm({ mode }: { mode: 'signin' | 'signup' }) {
           <Button
             type="submit"
             className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-gray-900 bg-lime-300 hover:bg-lime-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 h-12"
-            disabled={pending}
+            disabled={pending || isLoading}
           >
-            {pending ? (
+            {pending || isLoading ? (
               <>
                 <Loader2 className="animate-spin mr-2 h-4 w-4" />
                 Carregando...
@@ -248,12 +295,10 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
           <LoginForm mode={mode} />
         </Suspense>
       </div>
-
-      {/* Lado direito - Preview da aplicação */}
-      <div className="hidden lg:block lg:w-1/2 bg-[#F3F3F3] relative overflow-hidden">
-        <div className="relative h-full flex items-center justify-center p-8">
-          <div id="spline-container" ref={splineContainerRef} className="w-full h-full absolute inset-0"></div>
-        </div>
+      
+      {/* Visualização 3D lado direito */}
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
+        <div ref={splineContainerRef} className="absolute inset-0"></div>
       </div>
     </div>
   );
