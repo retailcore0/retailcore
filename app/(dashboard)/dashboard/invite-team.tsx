@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,23 +13,76 @@ import {
 import { Loader2, PlusCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { use, useActionState } from 'react';
-import { inviteTeamMember } from '@/app/(login)/actions';
-import { useUser } from '@/lib/auth';
 
-type ActionState = {
-  error?: string;
-  success?: string;
+// Simulação de usuário atual
+const mockUser = {
+  id: '1',
+  name: 'Demo User',
+  email: 'demo@example.com',
+  role: 'owner' // Pode ser 'owner' ou 'member'
 };
 
 export function InviteTeamMember() {
-  const { userPromise } = useUser();
-  const user = use(userPromise);
-  const isOwner = user?.role === 'owner';
-  const [inviteState, inviteAction, isInvitePending] = useActionState<
-    ActionState,
-    FormData
-  >(inviteTeamMember, { error: '', success: '' });
+  const [isInvitePending, setIsInvitePending] = useState(false);
+  const [inviteState, setInviteState] = useState({
+    error: '',
+    success: '',
+  });
+  const [formData, setFormData] = useState({
+    email: '',
+    role: 'member',
+  });
+
+  // Simulação: usuário atual é proprietário da equipe
+  const isOwner = mockUser.role === 'owner';
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value
+    }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsInvitePending(true);
+    setInviteState({ error: '', success: '' });
+
+    // Simular atraso de processamento
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Simulação de validação
+    if (!formData.email) {
+      setInviteState({ error: 'Email is required', success: '' });
+      setIsInvitePending(false);
+      return;
+    }
+
+    if (!formData.email.includes('@')) {
+      setInviteState({ error: 'Please enter a valid email address', success: '' });
+      setIsInvitePending(false);
+      return;
+    }
+
+    // Simulação de sucesso
+    setInviteState({ 
+      error: '', 
+      success: `Invitation sent to ${formData.email} with ${formData.role} role` 
+    });
+    setFormData({
+      email: '',
+      role: 'member',
+    });
+    setIsInvitePending(false);
+  };
 
   return (
     <Card>
@@ -36,7 +90,7 @@ export function InviteTeamMember() {
         <CardTitle>Invite Team Member</CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={inviteAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="email" className="mb-2">
               Email
@@ -48,12 +102,15 @@ export function InviteTeamMember() {
               placeholder="Enter email"
               required
               disabled={!isOwner}
+              value={formData.email}
+              onChange={handleChange}
             />
           </div>
           <div>
             <Label>Role</Label>
             <RadioGroup
-              defaultValue="member"
+              value={formData.role}
+              onValueChange={handleRoleChange}
               name="role"
               className="flex space-x-4"
               disabled={!isOwner}
@@ -68,10 +125,10 @@ export function InviteTeamMember() {
               </div>
             </RadioGroup>
           </div>
-          {inviteState?.error && (
+          {inviteState.error && (
             <p className="text-red-500">{inviteState.error}</p>
           )}
-          {inviteState?.success && (
+          {inviteState.success && (
             <p className="text-green-500">{inviteState.success}</p>
           )}
           <Button
