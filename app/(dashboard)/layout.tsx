@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { signOut } from '@/app/(login)/actions';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
@@ -33,10 +32,17 @@ function UserMenu() {
     }
   }, [router]);
 
-  async function handleSignOut() {
-    await signOut();
-    router.refresh();
-  }
+  // Função simulada para logout
+  const handleSignOut = async () => {
+    // Simular uma pequena espera para parecer autêntico
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Limpar estado de autenticação
+    localStorage.removeItem('isAuthenticated');
+    
+    // Redirecionar para a página de login
+    router.push('/sign-in');
+  };
 
   if (!user) {
     return null;
@@ -62,7 +68,7 @@ function UserMenu() {
             <span>Dashboard</span>
           </Link>
         </DropdownMenuItem>
-        <button onClick={signOut} className="flex w-full">
+        <button onClick={handleSignOut} className="flex w-full">
           <DropdownMenuItem className="w-full flex-1 cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Sair</span>

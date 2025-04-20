@@ -1,27 +1,86 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { customerPortalAction } from '@/lib/payments/actions';
-import { useActionState } from 'react';
-import { TeamDataWithMembers, User } from '@/lib/db/schema';
-import { removeTeamMember } from '@/app/(login)/actions';
 import { InviteTeamMember } from './invite-team';
 
-type ActionState = {
-  error?: string;
-  success?: string;
+// Dados de equipe simulados
+const mockTeamData = {
+  id: '1',
+  name: 'Demo Team',
+  planName: 'Pro',
+  subscriptionStatus: 'active',
+  teamMembers: [
+    {
+      id: '1',
+      role: 'owner',
+      user: {
+        id: '1',
+        name: 'Demo User',
+        email: 'demo@example.com',
+      }
+    },
+    {
+      id: '2',
+      role: 'member',
+      user: {
+        id: '2',
+        name: 'John Doe',
+        email: 'john@example.com',
+      }
+    },
+    {
+      id: '3',
+      role: 'member',
+      user: {
+        id: '3',
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+      }
+    }
+  ]
 };
 
-export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
-  const [removeState, removeAction, isRemovePending] = useActionState<
-    ActionState,
-    FormData
-  >(removeTeamMember, { error: '', success: '' });
+export function Settings() {
+  const [teamData, setTeamData] = useState(mockTeamData);
+  const [isRemovePending, setIsRemovePending] = useState<string | null>(null);
+  const [removeState, setRemoveState] = useState({
+    error: '',
+    success: '',
+  });
 
-  const getUserDisplayName = (user: Pick<User, 'id' | 'name' | 'email'>) => {
+  const getUserDisplayName = (user: { id: string; name?: string; email?: string }) => {
     return user.name || user.email || 'Unknown User';
+  };
+
+  const handleManageSubscription = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    alert('In a real app, this would redirect to your payment provider\'s customer portal.');
+  };
+
+  const handleRemoveMember = async (e: React.FormEvent<HTMLFormElement>, memberId: string) => {
+    e.preventDefault();
+    setIsRemovePending(memberId);
+    setRemoveState({ error: '', success: '' });
+
+    // Simulando atraso no processamento
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Lógica para remover membro
+    try {
+      // Simulando sucesso
+      setTeamData(prev => ({
+        ...prev,
+        teamMembers: prev.teamMembers.filter(member => member.id !== memberId)
+      }));
+      setRemoveState({ error: '', success: 'Member removed successfully' });
+    } catch (error) {
+      setRemoveState({ error: 'Failed to remove team member', success: '' });
+    }
+
+    setIsRemovePending(null);
   };
 
   return (
@@ -46,7 +105,7 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
                       : 'No active subscription'}
                 </p>
               </div>
-              <form action={customerPortalAction}>
+              <form onSubmit={handleManageSubscription}>
                 <Button type="submit" variant="outline">
                   Manage Subscription
                 </Button>
@@ -85,24 +144,27 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
                     </p>
                   </div>
                 </div>
-                {index > 1 ? (
-                  <form action={removeAction}>
+                {index > 0 && (
+                  <form onSubmit={(e) => handleRemoveMember(e, member.id)}>
                     <input type="hidden" name="memberId" value={member.id} />
                     <Button
                       type="submit"
                       variant="outline"
                       size="sm"
-                      disabled={isRemovePending}
+                      disabled={isRemovePending === member.id}
                     >
-                      {isRemovePending ? 'Removing...' : 'Remove'}
+                      {isRemovePending === member.id ? 'Removing...' : 'Remove'}
                     </Button>
                   </form>
-                ) : null}
+                )}
               </li>
             ))}
           </ul>
-          {removeState?.error && (
+          {removeState.error && (
             <p className="text-red-500 mt-4">{removeState.error}</p>
+          )}
+          {removeState.success && (
+            <p className="text-green-500 mt-4">{removeState.success}</p>
           )}
         </CardContent>
       </Card>
