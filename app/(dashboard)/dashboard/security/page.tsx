@@ -1,52 +1,127 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Lock, Trash2, Loader2 } from 'lucide-react';
-import { startTransition, useActionState } from 'react';
-import { updatePassword, deleteAccount } from '@/app/(login)/actions';
-
-type ActionState = {
-  error?: string;
-  success?: string;
-};
 
 export default function SecurityPage() {
-  const [passwordState, passwordAction, isPasswordPending] = useActionState<
-    ActionState,
-    FormData
-  >(updatePassword, { error: '', success: '' });
+  const [passwordState, setPasswordState] = useState({
+    error: '',
+    success: '',
+  });
+  const [deleteState, setDeleteState] = useState({
+    error: '',
+    success: '',
+  });
+  const [isPasswordPending, setIsPasswordPending] = useState(false);
+  const [isDeletePending, setIsDeletePending] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [deleteForm, setDeleteForm] = useState({
+    password: '',
+  });
 
-  const [deleteState, deleteAction, isDeletePending] = useActionState<
-    ActionState,
-    FormData
-  >(deleteAccount, { error: '', success: '' });
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleDeleteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setDeleteForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handlePasswordSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
-    // If you call the Server Action directly, it will automatically
-    // reset the form. We don't want that here, because we want to keep the
-    // client-side values in the inputs. So instead, we use an event handler
-    // which calls the action. You must wrap direct calls with startTransition.
-    // When you use the `action` prop it automatically handles that for you.
-    // Another option here is to persist the values to local storage. I might
-    // explore alternative options.
-    startTransition(() => {
-      passwordAction(new FormData(event.currentTarget));
+    setIsPasswordPending(true);
+    setPasswordState({ error: '', success: '' });
+
+    // Simular atraso de processamento
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Simulação de validação
+    if (!passwordForm.currentPassword) {
+      setPasswordState({ error: 'Current password is required', success: '' });
+      setIsPasswordPending(false);
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordState({
+        error: 'New password must be at least 8 characters',
+        success: '',
+      });
+      setIsPasswordPending(false);
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordState({
+        error: 'New passwords do not match',
+        success: '',
+      });
+      setIsPasswordPending(false);
+      return;
+    }
+
+    // Simulação de sucesso
+    setPasswordState({ error: '', success: 'Password updated successfully' });
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     });
+    setIsPasswordPending(false);
   };
 
   const handleDeleteSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
-    startTransition(() => {
-      deleteAction(new FormData(event.currentTarget));
-    });
+    setIsDeletePending(true);
+    setDeleteState({ error: '', success: '' });
+
+    // Simular atraso de processamento
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Simulação de validação
+    if (!deleteForm.password) {
+      setDeleteState({ error: 'Password is required to delete account', success: '' });
+      setIsDeletePending(false);
+      return;
+    }
+
+    if (deleteForm.password !== 'deleteconfirm') {
+      setDeleteState({
+        error: 'Incorrect password. For this demo, use "deleteconfirm"',
+        success: '',
+      });
+      setIsDeletePending(false);
+      return;
+    }
+
+    // Simulação de sucesso
+    setDeleteState({ error: '', success: 'Account deleted successfully. Redirecting...' });
+    setIsDeletePending(false);
+
+    // Simular redirecionamento
+    setTimeout(() => {
+      alert('In a real app, you would be redirected to the home page.');
+    }, 2000);
   };
 
   return (
@@ -72,6 +147,8 @@ export default function SecurityPage() {
                 required
                 minLength={8}
                 maxLength={100}
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordChange}
               />
             </div>
             <div>
@@ -86,6 +163,8 @@ export default function SecurityPage() {
                 required
                 minLength={8}
                 maxLength={100}
+                value={passwordForm.newPassword}
+                onChange={handlePasswordChange}
               />
             </div>
             <div>
@@ -99,6 +178,8 @@ export default function SecurityPage() {
                 required
                 minLength={8}
                 maxLength={100}
+                value={passwordForm.confirmPassword}
+                onChange={handlePasswordChange}
               />
             </div>
             {passwordState.error && (
@@ -135,6 +216,8 @@ export default function SecurityPage() {
         <CardContent>
           <p className="text-sm text-gray-500 mb-4">
             Account deletion is non-reversable. Please proceed with caution.
+            <br />
+            <span className="font-semibold">(For demo, use password: "deleteconfirm")</span>
           </p>
           <form onSubmit={handleDeleteSubmit} className="space-y-4">
             <div>
@@ -148,10 +231,15 @@ export default function SecurityPage() {
                 required
                 minLength={8}
                 maxLength={100}
+                value={deleteForm.password}
+                onChange={handleDeleteChange}
               />
             </div>
             {deleteState.error && (
               <p className="text-red-500 text-sm">{deleteState.error}</p>
+            )}
+            {deleteState.success && (
+              <p className="text-green-500 text-sm">{deleteState.success}</p>
             )}
             <Button
               type="submit"
