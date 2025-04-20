@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Estilos específicos para a tela de login */
+.glassmorphism {
+  @apply backdrop-blur-md bg-white/10 rounded-xl shadow-2xl border border-white/20;
+}
+
+/* Estilos para o botão gradiente */
+.gradient-button {
+  @apply relative w-full px-4 py-3 rounded-full font-medium text-white;
+  background: linear-gradient(to right, #1e40af, #2563eb);
+}
+
+/* Remove o cursor do Spline */
+spline-viewer, 
+#spline-container, 
+#spline-container * {
+  cursor: auto !important;
+}
+
+[class*="cursor"], 
+[class*="Cursor"], 
+[class*="hint"], 
+[class*="Hint"],
+[id*="cursor"], 
+[id*="hint"],
+.spline-cursor, 
+.cursor-dot, 
+.cursor-ring {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+  transform: scale(0) !important;
+} 
